@@ -1,5 +1,5 @@
-def encrpyt(integersBlock, n, e):
+def EncryptData(decDataBlock, n, e):
     return pow(integersBlock, e, n)
 
-def decrypt(cipher, n, d):
+def DecryptData(cipher, n, d):
     return pow(cipher, d, n)
