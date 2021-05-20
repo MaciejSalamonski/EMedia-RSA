@@ -1,7 +1,9 @@
-import RSA
+import binascii
 import ImageHandler
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
 
-class ElectronicCodeBookCustom():
+class ElectronicCodeBookBasedOnLibraries():
     def __init__(self, \
                  image, \
                  encryptedImage, \
@@ -9,34 +11,35 @@ class ElectronicCodeBookCustom():
                  n, \
                  e, \
                  d, \
-                 keyLength = None, \
                  blockLength = None):
         self.image = image
         self.encryptedImage = encryptedImage
         self.decryptedImage = decryptedImage
-        self.n = n
-        self.e = e
-        self.d = d
-
-        if not keyLength:
-            keyLength = 1024
-        self.keyLength = keyLength
-
-        if not blockLength:
-            blockLength = 256
+        (self.pairOfKeys, self.publicKey) = self.KeysGenerator(n, e, d)
+        if blockLength is None:
+            blockLength = 64
         self.blockLength = blockLength
 
+    def KeysGenerator(self, n, e, d):
+        pairOfKeys = RSA.construct((n, e, d))
+        publicKey = pairOfKeys.publickey()
+
+        return pairOfKeys, publicKey
+
     def BlockEncryption(self, dataBlock):
-        hexBase = 16
+        asciiBase = 'ascii'
         blocksLength = 512
+        hexBytesToHexString = 'utf-8'
 
-        decDataBlock = int(dataBlock, hexBase)
-        encryptedBlock = RSA.EncryptData(decDataBlock, self.n, self.e)
-        hexEncryptedDataBlock = format(encrpytedBlock, 'x')
+        bytesDataBlock = bytes(dataBlock, asciiBase)
+        encryptor = PKCS1_OAEP.new(self.publicKey)
+        encryptedDataBlock = encryptor.encrypt(bytesDataBlock)
+        hexEncryptedDataBlock = binascii.hexlify(encryptedDataBlock)
+        hexEncryptedDataBlock = str(hexEncryptedDataBlock, hexBytesToHexString)
 
-        while len(hexEncryptedDataBlock) % blocksLength != 0:
+        while len(hexEncryptedDataBlock) % blockLength != 0:
             hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
-
+        
         return hexEncryptedDataBlock
 
     def PngEncryption(self):
@@ -53,7 +56,7 @@ class ElectronicCodeBookCustom():
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
-       
+
             while currentBlocksLength < dataLength:
                 if (currentBlocksLength + self.blockLength) > dataLength:
                     dataBlock = hexIdatData[currentBlocksLength:(currentBlocksLength + (dataLength - currentBlocksLength))]
@@ -71,16 +74,18 @@ class ElectronicCodeBookCustom():
             ImageHandler.CreatePngFromHexString(self.encryptedImage, newImage)
 
     def BlockDecryption(self, dataBlock):
-        hexBase = 16
+        hexBytesToHexString = 'utf-8'
         evenLength = 2
 
-        decDataBlock = int(dataBlock, hexBase)
-        decryptedBlock = RSA.DecryptData(decDataBlock, self.n, self.d)
-        hexDecryptedDataBlock = format(decryptedBlock, 'x')
+        decryptor = PKCS1_OAEP.new(self.pairOfKeys)
+        bytesDataBlock = str.encode(dataBlock)
+        bytesDataBlock = binascii.unhexlify(bytesDataBlock)
+        hexDecryptedDataBlock = decryptor.decrypt(bytesDataBlock)
+        hexDecryptedDataBlock = str(hexDecryptedDataBlock, hexBytesToHexString)
 
         while len(hexDecryptedDataBlock) % evenLength != 0:
             hexDecryptedDataBlock = '0' + hexDecryptedDataBlock
-
+        
         return hexDecryptedDataBlock
 
     def PngDecryption(self):
