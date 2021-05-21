@@ -1,7 +1,8 @@
 import RSA
 import ImageHandler
+import random
 
-class ElectronicCodeBookCustom():
+class CipherBlockChaining():
     def __init__(self, \
                  image, \
                  encryptedImage, \
@@ -9,33 +10,37 @@ class ElectronicCodeBookCustom():
                  n, \
                  e, \
                  d, \
-                 keyLength = None, \
-                 blockLength = None):
+                 keyLength = 1024, \
+                 blockLength = 256):
         self.image = image
         self.encryptedImage = encryptedImage
         self.decryptedImage = decryptedImage
         self.n = n
         self.e = e
         self.d = d
-
-        if not keyLength:
-            keyLength = 1024
         self.keyLength = keyLength
-
-        if not blockLength:
-            blockLength = 256
         self.blockLength = blockLength
+        self.initVector = random.getrandbits(blockLength)
+        self.previouslyVector = None
+
+    def ExclusiveOrOfTwoElements(self, firstElement, secondElement)
+        return firstElement ^ secondElement
 
     def BlockEncryption(self, dataBlock):
+        blocksLength = 512
         hexBase = 16
         hexFormat = 'x'
-        blocksLength = 512
 
         decDataBlock = int(dataBlock, hexBase)
-        encryptedBlock = RSA.EncryptData(decDataBlock, self.n, self.e)
-        hexEncryptedDataBlock = format(encrpytedBlock, hexFormat)
+        xoredDataBlock = self.ExclusiveOrOfTwoElements(decDataBlock, self.initVector) \
+                            if self.previouslyVector == None \
+                            else self.ExclusiveOrOfTwoElements(decDataBlock, self.previouslyVector)
 
-        while len(hexEncryptedDataBlock) % blocksLength != 0:
+        encryptedBlock = RSA.EncryptData(xoredDataBlock, self.n, self.e)
+        self.previouslyVector = encryptedBlock
+        hexEncryptedDataBlock = format(encryptedBlock, hexFormat)
+
+        while len(hexEncryptedDataBlock) % blockLength != 0:
             hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
 
         return hexEncryptedDataBlock
@@ -50,11 +55,11 @@ class ElectronicCodeBookCustom():
             fourByteDataLenghtInHex = 8
             idatData = ''
 
-            dataLength = ImageHandler.GetDataLegnth(hexString, positionOfPngHeaderInsideHexString)
+            dataLength = ImageHandler.GetDataLength(hexString, positionOfPngHeaderInsideHexString)
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
-       
+
             while currentBlocksLength < dataLength:
                 if (currentBlocksLength + self.blockLength) > dataLength:
                     dataBlock = hexIdatData[currentBlocksLength:(currentBlocksLength + (dataLength - currentBlocksLength))]
@@ -64,6 +69,8 @@ class ElectronicCodeBookCustom():
                 currentBlocksLength += self.blockLength
                 encryptedBlock = self.BlockEncryption(dataBlock)
                 idatData += encryptedBlock
+
+            self.previouslyVector = None
 
             newImage = ImageHandler.CreateAnIdat(hexString, \
                                                  idatData, \
@@ -78,16 +85,21 @@ class ElectronicCodeBookCustom():
 
         decDataBlock = int(dataBlock, hexBase)
         decryptedBlock = RSA.DecryptData(decDataBlock, self.n, self.d)
-        hexDecryptedDataBlock = format(decryptedBlock, hexFormat)
+        xoredDecryptedDataBlock = self.ExclusiveOrOfTwoElements(decryptedBlock, self.initVector) \
+                                     if self.previouslyVector == None \
+                                     else self.ExclusiveOrOfTwoElements(decryptedBlock, self.previouslyVector)
 
-        while len(hexDecryptedDataBlock) % evenLength != 0:
-            hexDecryptedDataBlock = '0' + hexDecryptedDataBlock
+        self.previouslyVector = decDataBlock
+        hexXoredDecryptedDataBlock = format(xoredDecryptedDataBlock, hexFormat)
 
-        return hexDecryptedDataBlock
+        while len(hexXoredDecryptedDataBlock) % evenLength != 0:
+            hexXoredDecryptedDataBlock = '0' + hexXoredDecryptedDataBlock
+
+        return hexXoredDecryptedDataBlock
 
     def PngDecryption(self):
         imageToDecrypt = open(self.encryptedImage, 'rb')
-        hexString = imageToEncrypt.read().hex()
+        hexString = imageToDecrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
         if positionOfPngHeaderInsideHexString != -1:
@@ -101,12 +113,12 @@ class ElectronicCodeBookCustom():
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
 
-            while currentBlocksLength < dataLength
+            while currentBlocksLength < dataBlock
                 dataBlock = hexIdatData[currentBlocksLength:(currentBlocksLength + blocksLength)]
                 currentBlocksLength += blocksLength
                 decryptedBlock = self.BlockDecryption(dataBlock)
                 idatData += decryptedBlock
-            
+
             newImage = ImageHandler.CreateAnIdat(hexString, \
                                                  idatData, \
                                                  positionOfPngHeaderInsideHexString, \
