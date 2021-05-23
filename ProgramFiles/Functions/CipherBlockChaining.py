@@ -1,6 +1,6 @@
-import RSA
 import ImageHandler
 import random
+import RSA
 
 class CipherBlockChaining():
     def __init__(self, \
@@ -23,7 +23,7 @@ class CipherBlockChaining():
         self.initVector = random.getrandbits(blockLength)
         self.previouslyVector = None
 
-    def ExclusiveOrOfTwoElements(self, firstElement, secondElement)
+    def ExclusiveOrOfTwoElements(self, firstElement, secondElement):
         return firstElement ^ secondElement
 
     def BlockEncryption(self, dataBlock):
@@ -40,7 +40,7 @@ class CipherBlockChaining():
         self.previouslyVector = encryptedBlock
         hexEncryptedDataBlock = format(encryptedBlock, hexFormat)
 
-        while len(hexEncryptedDataBlock) % blockLength != 0:
+        while len(hexEncryptedDataBlock) % blocksLength != 0:
             hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
 
         return hexEncryptedDataBlock
@@ -108,12 +108,12 @@ class CipherBlockChaining():
             fourByteDataLenghtInHex = 8
             idatData = ''
 
-            dataLength = ImageHandler.GetDataLegnth(hexString, positionOfPngHeaderInsideHexString)
+            dataLength = ImageHandler.GetDataLength(hexString, positionOfPngHeaderInsideHexString)
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
 
-            while currentBlocksLength < dataBlock
+            while currentBlocksLength < dataLength:
                 dataBlock = hexIdatData[currentBlocksLength:(currentBlocksLength + blocksLength)]
                 currentBlocksLength += blocksLength
                 decryptedBlock = self.BlockDecryption(dataBlock)

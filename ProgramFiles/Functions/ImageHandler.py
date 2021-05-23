@@ -27,15 +27,15 @@ def CreateAnIdat(hexString, idatData, positionOfPngHeaderInsideHexString, dataLe
     dataStartPosition = 0
     hexFormat = 'x'
 
+    idatLength = int(len(idatData) / twoDigitHexInsideDataString)
+    hexIdatLength = format(idatLength, hexFormat)
+
     dataBeforeIdat = hexString[dataStartPosition:(positionOfPngHeaderInsideHexString - fourByteDataLenghtInHex)]
     idatHeader = hexString[positionOfPngHeaderInsideHexString:(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex)]
     restPngData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex + dataLength):]
 
-    idatLength = int(len(idatData) / twoDigitHexInsideDataString)
-    hexIdatLength = format(idatLength, hexFormat)
-
-    while len(hexDataLength) % fourByteDataLenghtInHex != 0:
-        hexIdatLength += '0'
+    while len(hexIdatLength) % fourByteDataLenghtInHex != 0:
+        hexIdatLength = '0' + hexIdatLength
 
     newImage = dataBeforeIdat + hexIdatLength + idatHeader + idatData + restPngData 
 

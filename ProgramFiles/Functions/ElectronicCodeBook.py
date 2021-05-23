@@ -1,7 +1,7 @@
-import RSA
 import ImageHandler
+import RSA
 
-class ElectronicCodeBookCustom():
+class ElectronicCodeBook():
     def __init__(self, \
                  image, \
                  encryptedImage, \
@@ -33,7 +33,7 @@ class ElectronicCodeBookCustom():
 
         decDataBlock = int(dataBlock, hexBase)
         encryptedBlock = RSA.EncryptData(decDataBlock, self.n, self.e)
-        hexEncryptedDataBlock = format(encrpytedBlock, hexFormat)
+        hexEncryptedDataBlock = format(encryptedBlock, hexFormat)
 
         while len(hexEncryptedDataBlock) % blocksLength != 0:
             hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
@@ -50,7 +50,7 @@ class ElectronicCodeBookCustom():
             fourByteDataLenghtInHex = 8
             idatData = ''
 
-            dataLength = ImageHandler.GetDataLegnth(hexString, positionOfPngHeaderInsideHexString)
+            dataLength = ImageHandler.GetDataLength(hexString, positionOfPngHeaderInsideHexString)
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
@@ -87,7 +87,7 @@ class ElectronicCodeBookCustom():
 
     def PngDecryption(self):
         imageToDecrypt = open(self.encryptedImage, 'rb')
-        hexString = imageToEncrypt.read().hex()
+        hexString = imageToDecrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
         if positionOfPngHeaderInsideHexString != -1:
@@ -96,12 +96,12 @@ class ElectronicCodeBookCustom():
             fourByteDataLenghtInHex = 8
             idatData = ''
 
-            dataLength = ImageHandler.GetDataLegnth(hexString, positionOfPngHeaderInsideHexString)
+            dataLength = ImageHandler.GetDataLength(hexString, positionOfPngHeaderInsideHexString)
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
 
-            while currentBlocksLength < dataLength
+            while currentBlocksLength < dataLength:
                 dataBlock = hexIdatData[currentBlocksLength:(currentBlocksLength + blocksLength)]
                 currentBlocksLength += blocksLength
                 decryptedBlock = self.BlockDecryption(dataBlock)

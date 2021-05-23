@@ -1,7 +1,8 @@
 import binascii
 import ImageHandler
-from Crypto.Cipher import PKCS1_OAEP
+
 from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
 
 class ElectronicCodeBookBasedOnLibraries():
     def __init__(self, \
@@ -15,6 +16,7 @@ class ElectronicCodeBookBasedOnLibraries():
         self.image = image
         self.encryptedImage = encryptedImage
         self.decryptedImage = decryptedImage
+        self.KeysGenerator(n, e, d)
         (self.pairOfKeys, self.publicKey) = self.KeysGenerator(n, e, d)
         if blockLength is None:
             blockLength = 64
@@ -37,7 +39,7 @@ class ElectronicCodeBookBasedOnLibraries():
         hexEncryptedDataBlock = binascii.hexlify(encryptedDataBlock)
         hexEncryptedDataBlock = str(hexEncryptedDataBlock, hexBytesToHexString)
 
-        while len(hexEncryptedDataBlock) % blockLength != 0:
+        while len(hexEncryptedDataBlock) % blocksLength != 0:
             hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
         
         return hexEncryptedDataBlock
@@ -52,7 +54,7 @@ class ElectronicCodeBookBasedOnLibraries():
             fourByteDataLenghtInHex = 8
             idatData = ''
 
-            dataLength = ImageHandler.GetDataLegnth(hexString, positionOfPngHeaderInsideHexString)
+            dataLength = ImageHandler.GetDataLength(hexString, positionOfPngHeaderInsideHexString)
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
@@ -90,7 +92,7 @@ class ElectronicCodeBookBasedOnLibraries():
 
     def PngDecryption(self):
         imageToDecrypt = open(self.encryptedImage, 'rb')
-        hexString = imageToEncrypt.read().hex()
+        hexString = imageToDecrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
         if positionOfPngHeaderInsideHexString != -1:
@@ -99,12 +101,12 @@ class ElectronicCodeBookBasedOnLibraries():
             fourByteDataLenghtInHex = 8
             idatData = ''
 
-            dataLength = ImageHandler.GetDataLegnth(hexString, positionOfPngHeaderInsideHexString)
+            dataLength = ImageHandler.GetDataLength(hexString, positionOfPngHeaderInsideHexString)
             hexIdatData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex):(positionOfPngHeaderInsideHexString \
                                                                                                     + fourByteDataLenghtInHex \
                                                                                                     + dataLength)]
 
-            while currentBlocksLength < dataLength
+            while currentBlocksLength < dataLength:
                 dataBlock = hexIdatData[currentBlocksLength:(currentBlocksLength + blocksLength)]
                 currentBlocksLength += blocksLength
                 decryptedBlock = self.BlockDecryption(dataBlock)

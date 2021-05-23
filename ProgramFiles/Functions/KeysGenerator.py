@@ -1,5 +1,6 @@
 import os
 import random
+
 from Crypto.Util import number
 
 def KeysGenerator(keyLength):
