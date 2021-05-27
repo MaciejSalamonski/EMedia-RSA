@@ -23,13 +23,14 @@ class CipherBlockChaining():
         self.initVector = random.getrandbits(blockLength)
         self.previouslyVector = None
 
-    def ExclusiveOrOfTwoElements(self, firstElement, secondElement):
-        return firstElement ^ secondElement
+    def ExclusiveOrOfTwoElements(self, dataBlock, vector):
+        return dataBlock ^ vector
 
     def BlockEncryption(self, dataBlock):
         blocksLength = 512
         hexBase = 16
         hexFormat = 'x'
+        nullCharacter = '0'
 
         decDataBlock = int(dataBlock, hexBase)
         xoredDataBlock = self.ExclusiveOrOfTwoElements(decDataBlock, self.initVector) \
@@ -41,12 +42,14 @@ class CipherBlockChaining():
         hexEncryptedDataBlock = format(encryptedBlock, hexFormat)
 
         while len(hexEncryptedDataBlock) % blocksLength != 0:
-            hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
+            hexEncryptedDataBlock = nullCharacter + hexEncryptedDataBlock
 
         return hexEncryptedDataBlock
 
     def PngEncryption(self):
-        imageToEncrypt = open(self.image, 'rb')
+        readBinaryFlag = 'rb'
+
+        imageToEncrypt = open(self.image, readBinaryFlag)
         hexString = imageToEncrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
@@ -72,16 +75,17 @@ class CipherBlockChaining():
 
             self.previouslyVector = None
 
-            newImage = ImageHandler.CreateAnIdat(hexString, \
-                                                 idatData, \
-                                                 positionOfPngHeaderInsideHexString, \
-                                                 dataLength)
+            newImage = ImageHandler.CreateImageWithNewIdat(hexString, \
+                                                           idatData, \
+                                                           positionOfPngHeaderInsideHexString, \
+                                                           dataLength)
             ImageHandler.CreatePngFromHexString(self.encryptedImage, newImage)
 
     def BlockDecryption(self, dataBlock):
         hexBase = 16
         hexFormat = 'x'
         evenLength = 2
+        nullCharacter = '0'
 
         decDataBlock = int(dataBlock, hexBase)
         decryptedBlock = RSA.DecryptData(decDataBlock, self.n, self.d)
@@ -93,12 +97,14 @@ class CipherBlockChaining():
         hexXoredDecryptedDataBlock = format(xoredDecryptedDataBlock, hexFormat)
 
         while len(hexXoredDecryptedDataBlock) % evenLength != 0:
-            hexXoredDecryptedDataBlock = '0' + hexXoredDecryptedDataBlock
+            hexXoredDecryptedDataBlock = nullCharacter + hexXoredDecryptedDataBlock
 
         return hexXoredDecryptedDataBlock
 
     def PngDecryption(self):
-        imageToDecrypt = open(self.encryptedImage, 'rb')
+        readBinaryFlag = 'rb'
+
+        imageToDecrypt = open(self.encryptedImage, readBinaryFlag)
         hexString = imageToDecrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
@@ -119,8 +125,8 @@ class CipherBlockChaining():
                 decryptedBlock = self.BlockDecryption(dataBlock)
                 idatData += decryptedBlock
 
-            newImage = ImageHandler.CreateAnIdat(hexString, \
-                                                 idatData, \
-                                                 positionOfPngHeaderInsideHexString, \
-                                                 dataLength)
+            newImage = ImageHandler.CreateImageWithNewIdat(hexString, \
+                                                           idatData, \
+                                                           positionOfPngHeaderInsideHexString, \
+                                                           dataLength)
             ImageHandler.CreatePngFromHexString(self.decryptedImage, newImage)

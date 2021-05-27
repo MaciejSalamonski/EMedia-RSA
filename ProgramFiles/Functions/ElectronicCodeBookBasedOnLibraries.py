@@ -32,20 +32,23 @@ class ElectronicCodeBookBasedOnLibraries():
         asciiBase = 'ascii'
         blocksLength = 512
         hexBytesToHexString = 'utf-8'
+        nullCharacter = '0'
 
         bytesDataBlock = bytes(dataBlock, asciiBase)
         encryptor = PKCS1_OAEP.new(self.publicKey)
         encryptedDataBlock = encryptor.encrypt(bytesDataBlock)
-        hexEncryptedDataBlock = binascii.hexlify(encryptedDataBlock)
-        hexEncryptedDataBlock = str(hexEncryptedDataBlock, hexBytesToHexString)
+        hexBytesEncryptedDataBlock = binascii.hexlify(encryptedDataBlock)
+        hexEncryptedDataBlock = str(hexBytesEncryptedDataBlock, hexBytesToHexString)
 
         while len(hexEncryptedDataBlock) % blocksLength != 0:
-            hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
+            hexEncryptedDataBlock = nullCharacter + hexEncryptedDataBlock
         
         return hexEncryptedDataBlock
 
     def PngEncryption(self):
-        imageToEncrypt = open(self.image, 'rb')
+        readBinaryFlag = 'rb'
+
+        imageToEncrypt = open(self.image, readBinaryFlag)
         hexString = imageToEncrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
@@ -69,29 +72,32 @@ class ElectronicCodeBookBasedOnLibraries():
                 encryptedBlock = self.BlockEncryption(dataBlock)
                 idatData += encryptedBlock
 
-            newImage = ImageHandler.CreateAnIdat(hexString, \
-                                                 idatData, \
-                                                 positionOfPngHeaderInsideHexString, \
-                                                 dataLength)
+            newImage = ImageHandler.CreateImageWithNewIdat(hexString, \
+                                                           idatData, \
+                                                           positionOfPngHeaderInsideHexString, \
+                                                           dataLength)
             ImageHandler.CreatePngFromHexString(self.encryptedImage, newImage)
 
     def BlockDecryption(self, dataBlock):
         hexBytesToHexString = 'utf-8'
         evenLength = 2
+        nullCharacter = '0'
 
         decryptor = PKCS1_OAEP.new(self.pairOfKeys)
-        bytesDataBlock = str.encode(dataBlock)
-        bytesDataBlock = binascii.unhexlify(bytesDataBlock)
-        hexDecryptedDataBlock = decryptor.decrypt(bytesDataBlock)
-        hexDecryptedDataBlock = str(hexDecryptedDataBlock, hexBytesToHexString)
+        hexBytesDataBlock = str.encode(dataBlock)
+        bytesDataBlock = binascii.unhexlify(hexBytesDataBlock)
+        bytesDecryptedDataBlock = decryptor.decrypt(bytesDataBlock)
+        hexDecryptedDataBlock = str(bytesDecryptedDataBlock, hexBytesToHexString)
 
         while len(hexDecryptedDataBlock) % evenLength != 0:
-            hexDecryptedDataBlock = '0' + hexDecryptedDataBlock
+            hexDecryptedDataBlock = nullCharacter + hexDecryptedDataBlock
         
         return hexDecryptedDataBlock
 
     def PngDecryption(self):
-        imageToDecrypt = open(self.encryptedImage, 'rb')
+        readBinaryFlag = 'rb'
+
+        imageToDecrypt = open(self.encryptedImage, readBinaryFlag)
         hexString = imageToDecrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
@@ -112,8 +118,8 @@ class ElectronicCodeBookBasedOnLibraries():
                 decryptedBlock = self.BlockDecryption(dataBlock)
                 idatData += decryptedBlock
             
-            newImage = ImageHandler.CreateAnIdat(hexString, \
-                                                 idatData, \
-                                                 positionOfPngHeaderInsideHexString, \
-                                                 dataLength)
+            newImage = ImageHandler.CreateImageWithNewIdat(hexString, \
+                                                           idatData, \
+                                                           positionOfPngHeaderInsideHexString, \
+                                                           dataLength)
             ImageHandler.CreatePngFromHexString(self.decryptedImage, newImage)

@@ -15,16 +15,19 @@ def GetDataLength(hexString, positionOfPngHeaderInsideHexString):
     return dataLength
 
 def CreatePngFromHexString(newImageName, dataForImageCreation):
+    writeAndBinaryFlag = 'wb'
+
     data = bytes.fromhex(dataForImageCreation)
 
-    with open(newImageName, 'wb') as newImage:
+    with open(newImageName, writeAndBinaryFlag) as newImage:
         newImage.write(data)
     newImage.close()
 
-def CreateAnIdat(hexString, idatData, positionOfPngHeaderInsideHexString, dataLength):
+def CreateImageWithNewIdat(hexString, idatData, positionOfPngHeaderInsideHexString, dataLength):
     fourByteDataLenghtInHex = 8
     twoDigitHexInsideDataString = 2
     dataStartPosition = 0
+    nullCharacter = '0'
     hexFormat = 'x'
 
     idatLength = int(len(idatData) / twoDigitHexInsideDataString)
@@ -35,7 +38,7 @@ def CreateAnIdat(hexString, idatData, positionOfPngHeaderInsideHexString, dataLe
     restPngData = hexString[(positionOfPngHeaderInsideHexString + fourByteDataLenghtInHex + dataLength):]
 
     while len(hexIdatLength) % fourByteDataLenghtInHex != 0:
-        hexIdatLength = '0' + hexIdatLength
+        hexIdatLength = nullCharacter + hexIdatLength
 
     newImage = dataBeforeIdat + hexIdatLength + idatHeader + idatData + restPngData 
 

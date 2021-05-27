@@ -30,18 +30,21 @@ class ElectronicCodeBook():
         hexBase = 16
         hexFormat = 'x'
         blocksLength = 512
+        nullCharacter = '0'
 
         decDataBlock = int(dataBlock, hexBase)
         encryptedBlock = RSA.EncryptData(decDataBlock, self.n, self.e)
         hexEncryptedDataBlock = format(encryptedBlock, hexFormat)
 
         while len(hexEncryptedDataBlock) % blocksLength != 0:
-            hexEncryptedDataBlock = '0' + hexEncryptedDataBlock
+            hexEncryptedDataBlock = nullCharacter + hexEncryptedDataBlock
 
         return hexEncryptedDataBlock
 
     def PngEncryption(self):
-        imageToEncrypt = open(self.image, 'rb')
+        readBinaryFlag = 'rb'
+
+        imageToEncrypt = open(self.image, readBinaryFlag)
         hexString = imageToEncrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
@@ -65,28 +68,31 @@ class ElectronicCodeBook():
                 encryptedBlock = self.BlockEncryption(dataBlock)
                 idatData += encryptedBlock
 
-            newImage = ImageHandler.CreateAnIdat(hexString, \
-                                                 idatData, \
-                                                 positionOfPngHeaderInsideHexString, \
-                                                 dataLength)
+            newImage = ImageHandler.CreateImageWithNewIdat(hexString, \
+                                                           idatData, \
+                                                           positionOfPngHeaderInsideHexString, \
+                                                           dataLength)
             ImageHandler.CreatePngFromHexString(self.encryptedImage, newImage)
 
     def BlockDecryption(self, dataBlock):
         hexBase = 16
         hexFormat = 'x'
         evenLength = 2
+        nullCharacter = '0'
 
         decDataBlock = int(dataBlock, hexBase)
         decryptedBlock = RSA.DecryptData(decDataBlock, self.n, self.d)
         hexDecryptedDataBlock = format(decryptedBlock, hexFormat)
 
         while len(hexDecryptedDataBlock) % evenLength != 0:
-            hexDecryptedDataBlock = '0' + hexDecryptedDataBlock
+            hexDecryptedDataBlock = nullCharacter + hexDecryptedDataBlock
 
         return hexDecryptedDataBlock
 
     def PngDecryption(self):
-        imageToDecrypt = open(self.encryptedImage, 'rb')
+        readBinaryFlag = 'rb'
+
+        imageToDecrypt = open(self.encryptedImage, readBinaryFlag)
         hexString = imageToDecrypt.read().hex()
         positionOfPngHeaderInsideHexString = ImageHandler.FindPngHeader(hexString)
 
@@ -107,8 +113,8 @@ class ElectronicCodeBook():
                 decryptedBlock = self.BlockDecryption(dataBlock)
                 idatData += decryptedBlock
             
-            newImage = ImageHandler.CreateAnIdat(hexString, \
-                                                 idatData, \
-                                                 positionOfPngHeaderInsideHexString, \
-                                                 dataLength)
+            newImage = ImageHandler.CreateImageWithNewIdat(hexString, \
+                                                           idatData, \
+                                                           positionOfPngHeaderInsideHexString, \
+                                                           dataLength)
             ImageHandler.CreatePngFromHexString(self.decryptedImage, newImage)
